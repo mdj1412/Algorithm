@@ -1,0 +1,190 @@
+https://programmers.co.kr/learn/courses/30/lessons/43165
+
+// 첫 번째 풀이
+
+#include <string>
+#include <vector>
+
+using namespace std;
+
+int solution(vector<int> numbers, int target) {
+    int answer = 0, mid_value;
+    
+    if (numbers.empty()) {
+        if (target == 0) { return 1; }
+        else { return 0; }
+    }
+
+    mid_value = numbers.back();
+    numbers.pop_back();
+    
+    answer += solution(numbers, target+mid_value);
+    answer += solution(numbers, target-mid_value);
+
+    return answer;
+}
+
+
+
+
+
+
+// 두 번째 풀이
+
+#include <string>
+#include <vector>
+
+using namespace std;
+
+int factorial(int n) {
+    if (n == 0) { return 1; }
+    return n * factorial(n-1);
+}
+
+int DFS(int idx, int target, bool* check, int* count) {
+    int answer = 0, max, nextIdx;
+    
+    // 종료되는 부분 => check가 끝까지 갔다.
+    if (idx == 51){
+        if (target == 0) { return 1; }
+        else { return 0; }
+    }
+    
+    
+    // idx 값을 몇 개 갖고 있는지 확인
+    max = count[idx];
+    
+    // 다음 index 위치를 찾기
+    nextIdx = idx + 1;
+    while (nextIdx < 51) {
+        if (check[nextIdx]) { break; }
+        nextIdx++;
+    }
+    
+    // 중요!
+    for (int i=0;i<=max;i++) {
+        answer += DFS(nextIdx, target + idx * (2*i-max), check, count) * (factorial(max) / factorial(i) / factorial(max-i));
+        // 할 필요 없음!
+//        answer += DFS(nextIdx, target - idx * (2*i-max), check, count);
+    }
+
+    return answer;
+}
+
+int solution(vector<int> numbers, int target) {
+    int answer = 0, N = numbers.size(), idx;
+    bool check[51];     // i번째 값이 존재하는지 확인
+    int count[51];      // i번째 값이 몇 개 존재하는지 확인
+    
+    // check의 초기값
+    for (int i=0;i<51;i++) { check[i] = false; }
+    
+    // check와 count 세팅
+    for (int i=0;i<N;i++) {
+        int j = numbers.back();
+        numbers.pop_back();
+        
+        if (check[j]) { count[j]++; }
+        else { check[j] = true; count[j] = 1; }
+    }
+    
+    idx = 1;
+    while (idx < 51) {
+        if (check[idx]) { break; }
+        idx++;
+    }
+    
+    // 시작
+    answer = DFS(idx, target, check, count);
+    
+    return answer;
+}
+
+
+
+
+
+// 세 번째 풀이
+
+#include <string>
+#include <vector>
+
+using namespace std;
+
+int DFS(vector<int> numbers, int target, int sum) {
+    int answer = 0, mid_value;
+    
+    if (numbers.empty()) {
+        if (target == 0) { return 1; }
+        else { return 0; }
+    }
+    
+    if ((target + sum < 0) || (target - sum > 0)) { return 0; }
+    
+    mid_value = numbers.back();
+    numbers.pop_back();
+    
+    sum -= mid_value;
+    
+    answer += DFS(numbers, target+mid_value, sum);
+    answer += DFS(numbers, target-mid_value, sum);
+    
+    return answer;
+}
+
+int solution(vector<int> numbers, int target) {
+    int sum = 0, N = numbers.size();
+    
+    for (int i=0;i<N;i++) {
+        sum += numbers[i];
+    }
+
+    return DFS(numbers, target, sum);
+}
+
+
+
+
+
+// 김희찬 풀이
+
+#include <vector>
+#include <string>
+using namespace std;
+// 배열의 크기가 클 경우 평균적으로 위 코드보다 효율적인 코드
+// 무엇을 빼야하는가에 초점을 두었다.
+// v={1,1,1,1,1} t=3 일 경우1 v의 모든 원소의 합 sum=5
+// sum-t=2 이고 2/2=1이다 즉 v에서 합이 1인 집합의 모임만 찾아주면 된다.
+// 여기서 합이 1인 집합을 찾는 다는 의미는 나머지는 부호가 +이고 1로 이루어진 집합만 -부호이다
+// 2로 나누어주는 이유는 +인 집합에서 어느 한 원소(a)를 -로 바꾸면 실제 sum은 sum-2a가 되기때문
+int get_number(vector<int> v, int sum, int idx, int count)
+{
+    //(vector, 합하였을때 원하는 값, index, return할 숫자값)
+    for (int i = idx; i < v.size(); i++)
+    {
+        int temp = sum - v[i];
+        // temp가 0인 경우 답이므로 count를 늘리고 다음 인덱스로 넘어간다
+        //즉 마지막에 뺀 원소와 같은 값이 되도록 새로운 원소들의 합을 찾는 과정
+        if (temp == 0)
+            count++;
+        // temp가 0보다 클 경우 합해야할 원소가 남아 있으므로 다음 idx부터 다시 합해간다
+        else if (temp > 0)
+            count += get_number(v, temp, i + 1, 0);
+        // temp<0 즉 v[idx]를 합하였을 때 초과한 경우 다음 인덱스로 넘어간다
+        else
+            continue;
+    }
+    return count;
+}
+int solution(vector<int> numbers, int target)
+{
+    int sum = 0;
+    for (int i = 0; i < numbers.size(); i++)
+        sum += numbers[i];
+    //만약 sum-target이 홀수면 답이 없다.
+    if ((sum - target) % 2 != 0)
+        return 0;
+    sum = (sum - target) / 2;
+    int answer = get_number(numbers, sum, 0, 0);
+    return answer;
+}
